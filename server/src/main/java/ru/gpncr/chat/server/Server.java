@@ -43,4 +43,14 @@ public class Server {
             c.sendMessage(message);
         }
     }
+
+    public boolean sendPrivateMessage(String userSender, String recipientName, String message) {
+        for (ClientHandler c : clients) {
+            if (c.getUserName().equals(recipientName)) {
+                c.sendMessage("Личное сообщение от " + userSender + ": " + message);
+                return true;
+            }
+        }
+        return false;
+    }
 }

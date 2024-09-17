@@ -13,15 +13,18 @@ public class ClientHandler {
     private DataOutputStream out;
 
     private String userName;
-    private static int useCount =0;
 
     public ClientHandler(Socket socket, Server server) throws IOException {
         this.server = server;
         this.socket = socket;
-        this.in = new DataInputStream(socket.getInputStream());
-        this.out = new DataOutputStream(socket.getOutputStream());
-        useCount++;
-        this.userName = "User"+useCount;
+        this.in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+        this.out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+
+        sendMessage("Введите ваше имя:");
+        this.userName = in.readUTF();
+        System.out.println("New Client "+ userName+" is connect");
+        sendMessage("Вы успешно зашли в чат");
+
         new Thread(() -> {
             try {
                 while (true) {
@@ -31,6 +34,18 @@ public class ClientHandler {
                             sendMessage("/exitok");
                             break;
                         }
+                        if (message.startsWith("/w ")) {
+                            List<String> parts = Arrays.asList(message.split(" ", 3));
+                            if (parts.size() < 3) {
+                                sendMessage("Неправильный формат команды. Используйте: /w [имя] [сообщение]");
+                                continue;
+                            }
+                            String recipientName = parts.get(1);
+                            String personalMessage = parts.get(2);
+                            if(!server.sendPrivateMessage(userName, recipientName, personalMessage)){
+                                sendMessage("В чате "+userName+" не состоит");
+                            }
+                        }
                         continue;
                     }
                     server.broadcastMessage(userName + ": " + message);
@@ -39,6 +54,7 @@ public class ClientHandler {
                 e.printStackTrace();
             } finally {
                 disconnect();
+                System.out.println("Client "+userName+" disconnect");
             }
         }).start();
     }
@@ -46,6 +62,7 @@ public class ClientHandler {
     public void sendMessage(String message) {
         try {
             out.writeUTF(message);
+            out.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
