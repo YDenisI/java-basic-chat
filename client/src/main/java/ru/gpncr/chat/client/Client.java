@@ -23,6 +23,13 @@ public class Client {
                     if (message.equalsIgnoreCase("/exitok")){
                         break;
                     }
+
+                    if (message.startsWith("/authok")){
+                        System.out.println("Аутетификация прошла успешно с именем пользователя: "+message.split(" ")[1]);
+                    }
+                    if (message.startsWith("/regok")){
+                        System.out.println("Регистрация прошла успешно с именем пользователя: "+message.split(" ")[1]);
+                    }
                     System.out.println(message);
                 }
             } catch (IOException e) {
