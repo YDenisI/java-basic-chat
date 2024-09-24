@@ -24,6 +24,11 @@ public class Client {
                         break;
                     }
 
+                    if (message.equalsIgnoreCase("/exit")){
+                        disconnect();
+                        System.exit(0);
+                    }
+
                     if (message.startsWith("/authok")){
                         System.out.println("Аутетификация прошла успешно с именем пользователя: "+message.split(" ")[1]);
                     }
@@ -32,7 +37,7 @@ public class Client {
                     }
                     System.out.println(message);
                 }
-            } catch (IOException e) {
+            } catch (IOException  e) {
                 e.printStackTrace();
             } finally {
                 disconnect();

@@ -9,11 +9,17 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider{
         private String login;
         private String password;
         private String username;
+        private Permission role;
 
-        public User(String login, String password, String username) {
+        public User(String login, String password, String username, Permission role) {
             this.login = login;
             this.password = password;
             this.username = username;
+            this.role = role;
+        }
+
+        public Permission getRole(){
+            return role;
         }
     }
 
@@ -23,9 +29,9 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider{
     public InMemoryAuthenticationProvider(Server server) {
         this.server = server;
         this.users = new ArrayList<>();
-        this.users.add(new User("login1", "password1", "username1"));
-        this.users.add(new User("login2", "password2", "username2"));
-        this.users.add(new User("login3", "password2", "username3"));
+        this.users.add(new User("login1", "password1", "username1",Permission.USER));
+        this.users.add(new User("login2", "password2", "username2",Permission.USER));
+        this.users.add(new User("admin", "admin", "username3",Permission.ADMIN));
     }
 
     @Override
@@ -36,7 +42,7 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider{
     @Override
     public synchronized boolean authenticate(ClientHandler clientHandler, String login, String password) {
         String authName = getUsernameByLoginAndPassword(login,password);
-
+        clientHandler.sendMessage(login +" "+password+" "+authName);
         if (authName == null){
             clientHandler.sendMessage("Некорретный логин/пароль");
             return false;
@@ -53,8 +59,19 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider{
 
     private String getUsernameByLoginAndPassword(String login, String password){
         for (User user: users){
-            if(user.login.equals(login) && password.equals(password)){
+            if(user.login.equals(login) && user.password.equals(password)){
+                System.out.println(login +" "+password);
                 return user.username;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Permission getPermission(String login, String password) {
+        for (User user: users){
+            if(user.login.equals(login) && user.password.equals(password)){
+                return user.role;
             }
         }
         return null;
@@ -94,11 +111,11 @@ public class InMemoryAuthenticationProvider implements AuthenticatedProvider{
             return false;
         }
 
-        users.add(new User(login,password,username));
+        users.add(new User(login,password,username, Permission.USER));
         clientHandler.setUserName(username);
         server.subscribe(clientHandler);
         clientHandler.sendMessage("/regok "+username);
 
-        return false;
+        return true;
     }
 }

@@ -13,9 +13,14 @@ public class ClientHandler {
     private DataOutputStream out;
 
     private String userName;
+    private Permission perm;
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getUserName() {
+        return userName;
     }
 
     public ClientHandler(Socket socket, Server server) throws IOException {
@@ -23,7 +28,6 @@ public class ClientHandler {
         this.socket = socket;
         this.in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         this.out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-
  /*       sendMessage("Введите ваше имя:");
         this.userName = in.readUTF();
         System.out.println("New Client "+ userName+" is connect");
@@ -47,6 +51,7 @@ public class ClientHandler {
                                 continue;
                             }
                             if (server.getAuthenticatedProvider().authenticate(this, elements[1], elements[2])) {
+                                perm = server.getAuthenticatedProvider().getPermission(elements[1], elements[2]);
                                 break;
                             }
                             continue;
@@ -64,8 +69,9 @@ public class ClientHandler {
                         }
                     }
                     sendMessage("Перед работой необходимо пройти аутентификацию командой "+
-                            "/auth login password или регстрацию командой /reg");
+                            "/auth login password или регистрацию командой /reg");
                 }
+                System.out.println("Клиент "+userName+" успешно прошел аутентификацию ");
                 while (true) {
                     String message = in.readUTF();
                     if (message.startsWith("/")) {
@@ -86,12 +92,27 @@ public class ClientHandler {
                                 sendMessage("В чате "+userName+" не состоит");
                             }
                         }
+
+                        if (message.startsWith("/kick") ) {
+                            String[] elements = message.split(" ");
+                            if (elements.length != 2) {
+                                sendMessage("Неверный формат команды /kick");
+                                continue;
+                            }
+                            if (perm == Permission.ADMIN) {
+                                if(!server.kickUser(elements[1])){
+                                    sendMessage("Пользователь с таким именем "+elements[1]+" не найден");
+                                }
+                            }else{
+                                sendMessage("Нет полномочий для выполнения команды /kick");
+                            }
+                        }
                         continue;
                     }
                     server.broadcastMessage(userName + ": " + message);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println("Клиент "+userName+ " отключен или ошибка чтения: " + e.getLocalizedMessage());
             } finally {
                 disconnect();
                 System.out.println("Client "+userName+" disconnect");
@@ -106,10 +127,6 @@ public class ClientHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public String getUserName() {
-        return userName;
     }
 
     public void disconnect() {

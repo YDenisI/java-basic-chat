@@ -70,4 +70,15 @@ public class Server {
         }
         return false;
     }
+
+    public boolean kickUser(String username){
+        for (ClientHandler c : clients) {
+            if (c.getUserName() != null && c.getUserName().equals(username)){
+                c.sendMessage("Вы удалены из чата");
+                c.sendMessage("/exit");
+                return true;
+            }
+        }
+        return false;
+    }
 }
